@@ -1,3 +1,6 @@
+## ArogyaSetu: Autonomous Patient Triage and Emergency Response Agent
+
+
 ArogyaSetu is a production-grade, autonomous healthcare-access agent built on Qwen Cloud and deployed on Alibaba Cloud infrastructure. It is designed to triage patient symptoms over WhatsApp, route moderate cases to nearby clinics, escalate critical cases to emergency services, and keep a licensed doctor in the loop at every decision point — bringing reliable healthcare access to rural patients who don't have one nearby.
 
 Built for the **Global AI Hackathon with Qwen Cloud** — Track 4: Autopilot Agent.
