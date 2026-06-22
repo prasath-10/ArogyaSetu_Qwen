@@ -9,6 +9,9 @@ on:
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./arogyasetu
 
     services:
       postgres:
@@ -43,6 +46,7 @@ jobs:
       with:
         python-version: '3.11'
         cache: 'pip'
+        cache-dependency-path: 'arogyasetu/requirements.txt'
 
     - name: Install dependencies
       run: |
