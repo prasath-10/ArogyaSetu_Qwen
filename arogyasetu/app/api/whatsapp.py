@@ -29,7 +29,7 @@ async def receive_message(request: Request):
     except (KeyError, IndexError):
         return {"status": "ignored"}
 
-    reply_text = run_agent(text)
+    reply_text = run_agent(text, session_id=from_number)
     await send_whatsapp_message(from_number, reply_text)
 
     return {"status": "ok"}

@@ -9,3 +9,5 @@ psycopg2-binary==2.9.10
 redis==5.2.0
 python-dotenv==1.0.1
 python-multipart==0.0.12
+pytest==7.4.3
+flake8==6.1.0
