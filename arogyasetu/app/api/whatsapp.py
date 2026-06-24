@@ -6,14 +6,24 @@ import httpx
 router = APIRouter()
 
 
+from fastapi.responses import PlainTextResponse
+
 @router.get("/webhook")
+@router.get("/webhook/")
 def verify_webhook(
-    hub_mode: str = Query(alias="hub.mode"),
-    hub_challenge: str = Query(alias="hub.challenge"),
-    hub_verify_token: str = Query(alias="hub.verify_token"),
+    hub_mode: str = Query(None, alias="hub.mode"),
+    hub_challenge: str = Query(None, alias="hub.challenge"),
+    hub_verify_token: str = Query(None, alias="hub.verify_token"),
 ):
-    if hub_verify_token == settings.whatsapp_verify_token:
-        return int(hub_challenge)
+    # If parameters are missing (e.g., manual browser visit), return a friendly message
+    if not hub_mode or not hub_challenge or not hub_verify_token:
+        return PlainTextResponse(content="Webhook is running. Use Meta Dashboard to verify.", status_code=200)
+
+    # Validate the verify token and mode
+    if hub_mode == "subscribe" and hub_verify_token == settings.whatsapp_verify_token:
+        # Meta requires the challenge to be returned exactly as plain text, NOT JSON.
+        return PlainTextResponse(content=hub_challenge)
+        
     raise HTTPException(status_code=403, detail="Verification failed")
 
 
