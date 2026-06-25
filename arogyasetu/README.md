@@ -161,24 +161,32 @@ pytest tests/ -v
 ```
 arogyasetu/
 ├── app/
-│   ├── main.py                  # FastAPI entrypoint
+│   ├── main.py                  # FastAPI entrypoint + CORS + static mount
 │   ├── config.py                # Settings (env vars)
 │   ├── agent/
 │   │   ├── orchestrator.py      # Core agent loop (tool-calling)
 │   │   ├── qwen_client.py       # Qwen Cloud API wrapper
+│   │   ├── memory.py            # Redis session memory (+ in-memory fallback)
 │   │   └── prompts.py           # System prompt / triage instructions
 │   ├── tools/
 │   │   ├── schemas.py           # Tool definitions (JSON schema for Qwen)
 │   │   └── implementations.py   # Actual tool logic (DB calls, etc.)
 │   ├── api/
-│   │   └── whatsapp.py          # WhatsApp webhook routes
-│   └── db/                      # DB models
+│   │   ├── whatsapp.py          # WhatsApp webhook routes
+│   │   └── chat.py              # Web Chat API endpoint (/api/chat)
+│   ├── static/
+│   │   └── index.html           # WhatsApp-style Web Chat UI (single file)
+│   └── db/                      # DB models, seed data, database config
+├── tests/
+│   ├── test_app.py              # Pytest unit tests
+│   └── manual_test.py           # Interactive CLI test
+├── test_scenarios.py            # End-to-end agent scenario tests
 ├── docs/
 │   └── architecture.md
-├── tests/
-│   └── manual_test.py
 ├── .env.example
 ├── requirements.txt
+├── Dockerfile
+├── docker-compose.yml
 ├── LICENSE
 └── README.md
 ```

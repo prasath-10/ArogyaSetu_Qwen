@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -32,14 +33,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(whatsapp_router, prefix="/api")
-app.include_router(chat_router, prefix="/api")
-
-
-
 
 @app.get("/health")
 def health_check():
     return {"status": "ok", "service": "arogya-agent"}
 
-app.mount("/", StaticFiles(directory="app/static", html=True), name="static")
+
+app.include_router(whatsapp_router, prefix="/api")
+app.include_router(chat_router, prefix="/api")
+
+# Mount static files LAST — the catch-all "/" mount must come after all API routes
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+if os.path.isdir(static_dir):
+    app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")

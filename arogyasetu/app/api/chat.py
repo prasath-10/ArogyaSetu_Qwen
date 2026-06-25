@@ -15,14 +15,25 @@ def chat_endpoint(request: ChatRequest):
     
     reply_text = run_agent(request.message, session_id=session_id)
     
+    import re
+    
     reply_upper = reply_text.upper()
     severity = "LOW" # Default
-    if "CRITICAL" in reply_upper:
-        severity = "CRITICAL"
-    elif "MODERATE" in reply_upper:
-        severity = "MODERATE"
-    elif "LOW" in reply_upper:
-        severity = "LOW"
+    
+    # Try explicit tags first
+    match = re.search(r'\[SEVERITY:\s*(LOW|MODERATE|CRITICAL)\]', reply_upper)
+    if match:
+        severity = match.group(1)
+        # Strip the tag from the original reply text
+        reply_text = re.sub(r'(?i)\[SEVERITY:\s*(LOW|MODERATE|CRITICAL)\]', '', reply_text).strip()
+    else:
+        # Fallback to simple substring
+        if "CRITICAL" in reply_upper:
+            severity = "CRITICAL"
+        elif "MODERATE" in reply_upper:
+            severity = "MODERATE"
+        elif "LOW" in reply_upper:
+            severity = "LOW"
         
     return {
         "reply": reply_text,
