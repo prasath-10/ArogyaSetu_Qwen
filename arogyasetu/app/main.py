@@ -26,9 +26,11 @@ app = FastAPI(
 app.include_router(whatsapp_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 
-app.mount("/", StaticFiles(directory="app/static", html=True), name="static")
+
 
 
 @app.get("/health")
 def health_check():
     return {"status": "ok", "service": "arogya-agent"}
+
+app.mount("/", StaticFiles(directory="app/static", html=True), name="static")
