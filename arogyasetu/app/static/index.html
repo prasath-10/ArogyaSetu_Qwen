@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ArogyaSetu Triage</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --wa-dark-green: #075E54;
@@ -12,9 +12,13 @@
             --wa-light-green: #25D366;
             --wa-bg: #E5DDD5;
             --wa-bubble-in: #FFFFFF;
-            --wa-bubble-out: #E2FFC7; /* WhatsApp outgoing bubble color */
+            --wa-bubble-out: #E2FFC7;
             --wa-text: #303030;
             --wa-meta: #999999;
+            
+            --sev-low: #25D366;
+            --sev-mod: #FFA500;
+            --sev-crit: #FF3B30;
         }
 
         * {
@@ -127,24 +131,25 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            /* Optional subtle background pattern here */
+            scroll-behavior: smooth;
         }
 
         .message-row {
             display: flex;
             width: 100%;
+            flex-direction: column;
         }
 
         .message-row.agent {
-            justify-content: flex-start;
+            align-items: flex-start;
         }
 
         .message-row.patient {
-            justify-content: flex-end;
+            align-items: flex-end;
         }
 
         .bubble {
-            max-width: 80%;
+            max-width: 85%;
             padding: 8px 12px;
             border-radius: 8px;
             font-size: 14.5px;
@@ -153,6 +158,7 @@
             position: relative;
             box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
             word-wrap: break-word;
+            white-space: pre-wrap;
         }
         
         .message-row.agent .bubble {
@@ -171,6 +177,88 @@
             float: right;
             margin-top: 8px;
             margin-left: 12px;
+        }
+
+        /* Severity Card Styles */
+        .bubble.sev-low {
+            border-left: 4px solid var(--sev-low);
+        }
+        
+        .bubble.sev-moderate {
+            border-left: 4px solid var(--sev-mod);
+            background-color: #FFF9E6;
+            border-top: 1px solid #FFE0B2;
+            border-right: 1px solid #FFE0B2;
+            border-bottom: 1px solid #FFE0B2;
+        }
+        
+        .bubble.sev-critical {
+            border-left: 4px solid var(--sev-crit);
+            background-color: #FFEBEE;
+            border-top: 1px solid #FFCDD2;
+            border-right: 1px solid #FFCDD2;
+            border-bottom: 1px solid #FFCDD2;
+            color: #B71C1C;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(255,59,48,0.2);
+        }
+        
+        .bubble-content {
+            display: inline;
+        }
+
+        /* Quick Replies */
+        .quick-replies {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .quick-reply-btn {
+            background-color: white;
+            border: 1px solid var(--wa-light-green);
+            color: var(--wa-dark-green);
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        
+        .quick-reply-btn:hover {
+            background-color: var(--wa-light-green);
+            color: white;
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: none;
+            padding: 12px;
+            background: var(--wa-bubble-in);
+            border-radius: 12px;
+            border-top-left-radius: 0;
+            width: fit-content;
+            box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+        }
+        
+        .typing-indicator span {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background-color: #999;
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
         }
 
         /* Input Area */
@@ -192,8 +280,9 @@
             outline: none;
         }
         
-        .text-input::placeholder {
-            color: #999;
+        .text-input:disabled {
+            background-color: #e0e0e0;
+            cursor: not-allowed;
         }
 
         .send-btn {
@@ -212,7 +301,12 @@
             flex-shrink: 0;
         }
         
-        .send-btn:active {
+        .send-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .send-btn:active:not(:disabled) {
             transform: scale(0.95);
         }
         
@@ -220,7 +314,7 @@
             width: 20px;
             height: 20px;
             fill: white;
-            margin-left: 4px; /* visually center the paper plane */
+            margin-left: 4px;
         }
     </style>
 </head>
@@ -229,14 +323,11 @@
         <!-- Header -->
         <div class="header">
             <div class="logo-container">
-                <!-- Medical Cross SVG -->
-                <svg viewBox="0 0 24 24">
-                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
-                </svg>
+                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
             </div>
             <div class="header-info">
                 <div class="app-title">ArogyaSetu Triage</div>
-                <div class="status">Online</div>
+                <div class="status" id="statusText">Online</div>
             </div>
         </div>
         
@@ -252,7 +343,20 @@
             <div class="message-row agent">
                 <div class="bubble">
                     Hello! I am ArogyaSetu, your healthcare assistant. How can I help you today?
-                    <span class="time">Now</span>
+                    <span class="time" id="welcomeTime"></span>
+                </div>
+                <div class="quick-replies" id="quickReplies">
+                    <button class="quick-reply-btn" onclick="sendQuickReply('I have fever')">I have fever</button>
+                    <button class="quick-reply-btn" onclick="sendQuickReply('Chest pain')">Chest pain</button>
+                    <button class="quick-reply-btn" onclick="sendQuickReply('சளி இருக்கிறது')">சளி இருக்கிறது (Tamil)</button>
+                    <button class="quick-reply-btn" onclick="sendQuickReply('मुझे खांसी है')">मुझे खांसी है (Hindi)</button>
+                </div>
+            </div>
+            
+            <!-- Typing Indicator Row -->
+            <div class="message-row agent" id="typingRow" style="display: none;">
+                <div class="typing-indicator">
+                    <span></span><span></span><span></span>
                 </div>
             </div>
         </div>
@@ -261,54 +365,173 @@
         <div class="input-area">
             <input type="text" class="text-input" placeholder="Type a message" id="messageInput" autocomplete="off">
             <button class="send-btn" id="sendBtn">
-                <!-- Paper Plane SVG -->
-                <svg viewBox="0 0 24 24">
-                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-                </svg>
+                <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
             </button>
         </div>
     </div>
     
     <script>
-        // Set Language toggle
+        // Set initial time
+        document.getElementById('welcomeTime').innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        // Generate or retrieve Session ID
+        let sessionId = localStorage.getItem('arogya_session_id');
+        if (!sessionId) {
+            sessionId = 'sess_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('arogya_session_id', sessionId);
+        }
+
+        const chatArea = document.getElementById('chatArea');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const typingRow = document.getElementById('typingRow');
+        const statusText = document.getElementById('statusText');
+        const quickReplies = document.getElementById('quickReplies');
+
         function setLang(lang, element) {
             document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
             element.classList.add('active');
-            
-            // In a real app we might translate the UI or inform the backend
-            // For now, we just switch the active button.
         }
-        
-        // Add message to chat area
-        function addMessage(text, type) {
-            const chatArea = document.getElementById('chatArea');
+
+        function scrollToBottom() {
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
+        }
+
+        function sendQuickReply(text) {
+            if (quickReplies) quickReplies.style.display = 'none';
+            sendMessage(text);
+        }
+
+        function playAlertSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                function beep(freq, duration, delay) {
+                    setTimeout(() => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                        
+                        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+                        
+                        osc.start(ctx.currentTime);
+                        osc.stop(ctx.currentTime + duration);
+                    }, delay);
+                }
+                
+                // Play a double urgent beep
+                beep(880, 0.15, 0);
+                beep(880, 0.15, 200);
+                
+            } catch(e) {
+                console.error("Web Audio API not supported", e);
+            }
+        }
+
+        function addMessageBubble(text, type, severity = null) {
             const row = document.createElement('div');
             row.className = `message-row ${type}`;
             
             const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             
+            let severityClass = '';
+            let icon = '';
+            
+            if (type === 'agent' && severity) {
+                if (severity === 'CRITICAL') {
+                    severityClass = 'sev-critical';
+                    icon = '🔴 ';
+                    playAlertSound();
+                } else if (severity === 'MODERATE') {
+                    severityClass = 'sev-moderate';
+                    icon = '🟡 ';
+                } else if (severity === 'LOW') {
+                    severityClass = 'sev-low';
+                    icon = '🟢 ';
+                }
+            }
+
+            const cleanText = escapeHTML(text);
+
             row.innerHTML = `
-                <div class="bubble">
-                    ${text}
+                <div class="bubble ${severityClass}">
+                    <div class="bubble-content">${icon}${cleanText}</div>
                     <span class="time">${time}</span>
                 </div>
             `;
-            chatArea.appendChild(row);
-            chatArea.scrollTop = chatArea.scrollHeight;
+            
+            // Insert before typing indicator
+            chatArea.insertBefore(row, typingRow);
+            scrollToBottom();
         }
 
-        // Basic event listeners
-        document.getElementById('sendBtn').addEventListener('click', () => {
-            const input = document.getElementById('messageInput');
-            if (input.value.trim()) {
-                addMessage(input.value.trim(), 'patient');
-                input.value = '';
-            }
-        });
+        async function sendMessage(text = null) {
+            const msg = text || messageInput.value.trim();
+            if (!msg) return;
 
-        document.getElementById('messageInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                document.getElementById('sendBtn').click();
+            if (quickReplies) quickReplies.style.display = 'none';
+
+            // Add patient message
+            addMessageBubble(msg, 'patient');
+            messageInput.value = '';
+            
+            // Disable inputs & show typing indicator
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
+            typingRow.style.display = 'flex';
+            statusText.innerText = 'typing...';
+            scrollToBottom();
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: msg, session_id: sessionId })
+                });
+                
+                const data = await response.json();
+                
+                // Hide typing
+                typingRow.style.display = 'none';
+                statusText.innerText = 'Online';
+                
+                addMessageBubble(data.reply, 'agent', data.severity);
+                
+            } catch (error) {
+                typingRow.style.display = 'none';
+                statusText.innerText = 'Online';
+                addMessageBubble("Sorry, there was a network error. Please try again.", 'agent');
+            } finally {
+                // Re-enable inputs
+                messageInput.disabled = false;
+                sendBtn.disabled = false;
+                messageInput.focus();
+                scrollToBottom();
+            }
+        }
+
+        // Event Listeners
+        sendBtn.addEventListener('click', () => sendMessage());
+
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !messageInput.disabled) {
+                sendMessage();
             }
         });
     </script>
