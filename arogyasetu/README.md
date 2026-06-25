@@ -114,6 +114,15 @@ uvicorn app.main:app --reload --port 8000
 - Health check: `http://localhost:8000/health`
 - Interactive Swagger UI: `http://localhost:8000/docs`
 
+### Web Chat UI (Hackathon Demo)
+
+For the hackathon demonstration, we have built a WhatsApp-style Web Chat UI so judges can test the agent without needing WhatsApp accounts or Meta API approval.
+
+- **Access the UI**: Open `http://localhost:8000` in your browser after starting the FastAPI server.
+- **Note**: The WhatsApp Business API integration is fully built (see `/api/webhook`) and planned for the final production deployment.
+
+![Web Chat UI Screenshot](docs/web_chat_ui_placeholder.png)
+
 ### Connecting WhatsApp
 
 Point your WhatsApp webhook URL (e.g. via ngrok during local dev) to:
