@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from app.api.whatsapp import router as whatsapp_router
 from app.api.chat import router as chat_router
 from app.db.database import engine
@@ -21,6 +22,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Arogya Agent — AI Rural Healthcare Access", lifespan=lifespan
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(whatsapp_router, prefix="/api")
