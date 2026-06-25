@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ArogyaSetu Triage</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --wa-dark-green: #075E54;
+            --wa-green: #128C7E;
+            --wa-light-green: #25D366;
+            --wa-bg: #E5DDD5;
+            --wa-bubble-in: #FFFFFF;
+            --wa-bubble-out: #E2FFC7; /* WhatsApp outgoing bubble color */
+            --wa-text: #303030;
+            --wa-meta: #999999;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body, html {
+            height: 100%;
+            background-color: #d1d7db;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            height: 100vh;
+            background-color: var(--wa-bg);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        @media (min-width: 481px) {
+            .app-container {
+                height: 90vh;
+                border-radius: 12px;
+                overflow: hidden;
+            }
+        }
+
+        /* Header */
+        .header {
+            background-color: var(--wa-dark-green);
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            z-index: 10;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .logo-container {
+            width: 40px;
+            height: 40px;
+            background-color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 12px;
+        }
+        
+        .logo-container svg {
+            width: 24px;
+            height: 24px;
+            fill: var(--wa-dark-green);
+        }
+
+        .header-info {
+            flex-grow: 1;
+        }
+
+        .app-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .status {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        /* Language Selector */
+        .lang-selector {
+            background-color: var(--wa-green);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px;
+            color: white;
+            font-size: 13px;
+        }
+        
+        .lang-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            font-weight: 500;
+            padding: 4px 12px;
+            border-radius: 16px;
+            transition: all 0.2s ease;
+        }
+        
+        .lang-btn.active {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Chat Area */
+        .chat-area {
+            flex-grow: 1;
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            /* Optional subtle background pattern here */
+        }
+
+        .message-row {
+            display: flex;
+            width: 100%;
+        }
+
+        .message-row.agent {
+            justify-content: flex-start;
+        }
+
+        .message-row.patient {
+            justify-content: flex-end;
+        }
+
+        .bubble {
+            max-width: 80%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 14.5px;
+            line-height: 1.4;
+            color: var(--wa-text);
+            position: relative;
+            box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+            word-wrap: break-word;
+        }
+        
+        .message-row.agent .bubble {
+            background-color: var(--wa-bubble-in);
+            border-top-left-radius: 0;
+        }
+
+        .message-row.patient .bubble {
+            background-color: var(--wa-bubble-out);
+            border-top-right-radius: 0;
+        }
+        
+        .bubble .time {
+            font-size: 10px;
+            color: var(--wa-meta);
+            float: right;
+            margin-top: 8px;
+            margin-left: 12px;
+        }
+
+        /* Input Area */
+        .input-area {
+            background-color: #f0f0f0;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .text-input {
+            flex-grow: 1;
+            background-color: white;
+            border: none;
+            border-radius: 24px;
+            padding: 12px 16px;
+            font-size: 15px;
+            outline: none;
+        }
+        
+        .text-input::placeholder {
+            color: #999;
+        }
+
+        .send-btn {
+            background-color: var(--wa-light-green);
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+            flex-shrink: 0;
+        }
+        
+        .send-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .send-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+            margin-left: 4px; /* visually center the paper plane */
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo-container">
+                <!-- Medical Cross SVG -->
+                <svg viewBox="0 0 24 24">
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+                </svg>
+            </div>
+            <div class="header-info">
+                <div class="app-title">ArogyaSetu Triage</div>
+                <div class="status">Online</div>
+            </div>
+        </div>
+        
+        <!-- Language Selector -->
+        <div class="lang-selector">
+            <button class="lang-btn" onclick="setLang('ta', this)">தமிழ்</button>
+            <button class="lang-btn" onclick="setLang('hi', this)">हिंदी</button>
+            <button class="lang-btn active" onclick="setLang('en', this)">English</button>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-area" id="chatArea">
+            <div class="message-row agent">
+                <div class="bubble">
+                    Hello! I am ArogyaSetu, your healthcare assistant. How can I help you today?
+                    <span class="time">Now</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-area">
+            <input type="text" class="text-input" placeholder="Type a message" id="messageInput" autocomplete="off">
+            <button class="send-btn" id="sendBtn">
+                <!-- Paper Plane SVG -->
+                <svg viewBox="0 0 24 24">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        // Set Language toggle
+        function setLang(lang, element) {
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+            
+            // In a real app we might translate the UI or inform the backend
+            // For now, we just switch the active button.
+        }
+        
+        // Add message to chat area
+        function addMessage(text, type) {
+            const chatArea = document.getElementById('chatArea');
+            const row = document.createElement('div');
+            row.className = `message-row ${type}`;
+            
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            row.innerHTML = `
+                <div class="bubble">
+                    ${text}
+                    <span class="time">${time}</span>
+                </div>
+            `;
+            chatArea.appendChild(row);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        // Basic event listeners
+        document.getElementById('sendBtn').addEventListener('click', () => {
+            const input = document.getElementById('messageInput');
+            if (input.value.trim()) {
+                addMessage(input.value.trim(), 'patient');
+                input.value = '';
+            }
+        });
+
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('sendBtn').click();
+            }
+        });
+    </script>
+</body>
+</html>

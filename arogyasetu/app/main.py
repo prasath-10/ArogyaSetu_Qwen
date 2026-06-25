@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from app.api.whatsapp import router as whatsapp_router
 from app.api.chat import router as chat_router
 from app.db.database import engine
@@ -24,6 +25,8 @@ app = FastAPI(
 
 app.include_router(whatsapp_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
+
+app.mount("/", StaticFiles(directory="app/static", html=True), name="static")
 
 
 @app.get("/health")
