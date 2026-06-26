@@ -1,6 +1,7 @@
 import os
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.whatsapp import router as whatsapp_router
 from app.api.chat import router as chat_router
@@ -43,6 +44,14 @@ def health_check():
 app.include_router(whatsapp_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 app.include_router(cases_router, prefix="/api")
+
+
+@app.get("/doctor")
+def doctor_dashboard():
+    """Serve the Doctor Dashboard UI."""
+    dashboard_path = os.path.join(os.path.dirname(__file__), "static", "doctor-dashboard.html")
+    return FileResponse(dashboard_path, media_type="text/html")
+
 
 # Mount static files LAST — the catch-all "/" mount must come after all API routes
 static_dir = os.path.join(os.path.dirname(__file__), "static")

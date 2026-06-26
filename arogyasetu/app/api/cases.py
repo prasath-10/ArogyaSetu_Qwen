@@ -34,14 +34,18 @@ class ReviewRequest(BaseModel):
 # ── Endpoints ────────────────────────────────────────────────────────
 
 @router.get("/cases", response_model=list[CaseOut])
-def list_pending_cases(db: Session = Depends(get_db)):
-    """Return all doctor cases with status 'pending'."""
-    cases = (
-        db.query(DoctorCase)
-        .filter(DoctorCase.status == "pending")
-        .order_by(DoctorCase.created_at.desc())
-        .all()
-    )
+def list_cases(status: str | None = None, db: Session = Depends(get_db)):
+    """Return doctor cases, optionally filtered by status.
+
+    If status is omitted the endpoint returns only pending cases (backwards-compatible).
+    Pass status=all to retrieve every case.
+    """
+    query = db.query(DoctorCase)
+    if status and status != "all":
+        query = query.filter(DoctorCase.status == status)
+    elif not status:
+        query = query.filter(DoctorCase.status == "pending")
+    cases = query.order_by(DoctorCase.created_at.desc()).all()
     return cases
 
 
