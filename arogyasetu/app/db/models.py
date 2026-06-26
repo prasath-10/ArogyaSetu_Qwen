@@ -1,4 +1,7 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey
+from sqlalchemy import (
+    Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text,
+    CheckConstraint,
+)
 from sqlalchemy.orm import declarative_base, relationship
 import datetime
 
@@ -44,3 +47,31 @@ class Appointment(Base):
 
     clinic = relationship("Clinic", back_populates="appointments")
     patient = relationship("Patient", back_populates="appointments")
+
+
+class DoctorCase(Base):
+    __tablename__ = "doctor_cases"
+    __table_args__ = (
+        CheckConstraint(
+            "severity IN ('low', 'moderate', 'critical')",
+            name="ck_doctor_cases_severity",
+        ),
+        CheckConstraint(
+            "status IN ('pending', 'reviewed', 'resolved')",
+            name="ck_doctor_cases_status",
+        ),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    patient_phone = Column(
+        String, ForeignKey("patients.phone"), nullable=False, index=True
+    )
+    symptoms = Column(Text, nullable=False)
+    severity = Column(String, nullable=False, default="low")
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    reviewed_at = Column(DateTime, nullable=True)
+    doctor_notes = Column(Text, nullable=True)
+    status = Column(String, nullable=False, default="pending")
+
+    patient = relationship("Patient")
+
