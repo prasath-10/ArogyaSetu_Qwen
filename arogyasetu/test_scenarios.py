@@ -2,13 +2,21 @@ import asyncio
 import sys
 import re
 import os
-sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stdout, 'reconfigure') and "pytest" not in sys.modules:
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
 
 # Check for API key before importing agent (which initializes the OpenAI client)
 if not os.environ.get("QWEN_API_KEY"):
-    print("⚠️  QWEN_API_KEY not set — skipping live agent tests.")
-    print("   Set QWEN_API_KEY in your .env file to run these scenarios.")
-    sys.exit(0)
+    if "pytest" in sys.modules:
+        import pytest
+        pytest.skip("QWEN_API_KEY not set — skipping live agent tests.", allow_module_level=True)
+    else:
+        print("⚠️  QWEN_API_KEY not set — skipping live agent tests.")
+        print("   Set QWEN_API_KEY in your .env file to run these scenarios.")
+        sys.exit(0)
 
 from app.agent.orchestrator import run_agent
 from app.tools.implementations import TOOL_REGISTRY
