@@ -63,15 +63,13 @@ class DoctorCase(Base):
     )
 
     id = Column(Integer, primary_key=True, index=True)
-    patient_phone = Column(
-        String, ForeignKey("patients.phone"), nullable=False, index=True
-    )
+    # No ForeignKey — DoctorCase can be created for any session_id
+    # without requiring a Patient record to exist first.
+    patient_phone = Column(String, nullable=False, index=True)
     symptoms = Column(Text, nullable=False)
     severity = Column(String, nullable=False, default="low")
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     reviewed_at = Column(DateTime, nullable=True)
     doctor_notes = Column(Text, nullable=True)
     status = Column(String, nullable=False, default="pending")
-
-    patient = relationship("Patient")
 

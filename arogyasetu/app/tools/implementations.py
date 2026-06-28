@@ -51,7 +51,12 @@ def book_slot(
     clinic_id: str | int, patient_phone: str, preferred_time: str = "today"
 ) -> dict:
     """Create a patient record if new, and book an appointment slot in the database."""
+    from app.db.models import DoctorCase
+
     db = SessionLocal()
+    result = None
+    clinic_name = None
+    token = None
     try:
         try:
             c_id = int(clinic_id)
@@ -87,6 +92,7 @@ def book_slot(
         # Generate a random token
         token_num = random.randint(10, 99)
         token = f"#{token_num}"
+        clinic_name = clinic.name
 
         appointment = Appointment(
             clinic_id=clinic.id,
@@ -98,21 +104,9 @@ def book_slot(
         db.add(appointment)
         db.commit()
 
-        # Log moderate case to doctor dashboard
-        from app.db.models import DoctorCase
-        case = DoctorCase(
-            patient_phone=patient_phone,
-            symptoms=f"Appointment booked at {clinic.name} — token {token}",
-            severity="moderate",
-            status="pending",
-        )
-        db.add(case)
-        db.commit()
-        print(f"[Booking] Moderate case logged to doctor dashboard")
-
-        return {
+        result = {
             "status": "confirmed",
-            "clinic_name": clinic.name,
+            "clinic_name": clinic_name,
             "token": token,
             "time": preferred_time,
         }
@@ -122,31 +116,71 @@ def book_slot(
     finally:
         db.close()
 
+    # Log moderate case in a fresh isolated session — runs after booking commits
+    if result and result.get("status") == "confirmed":
+        db2 = SessionLocal()
+        try:
+            mod_case = DoctorCase(
+                patient_phone=patient_phone,
+                symptoms=f"Appointment booked at {clinic_name} — token {token}",
+                severity="moderate",
+                status="pending",
+            )
+            db2.add(mod_case)
+            db2.commit()
+            db2.refresh(mod_case)
+            print(f"[Booking] Moderate case logged: ID={mod_case.id}")
+        except Exception as e:
+            db2.rollback()
+            print(f"[Booking] Failed to log moderate case: {type(e).__name__}: {e}")
+        finally:
+            db2.close()
+
+    return result
+
 def alert_emergency(
     patient_phone: str, location: str, symptom_summary: str
 ) -> dict:
     """Escalate critical cases.
 
     Triggers an emergency dispatch webhook if configured.
-    Also logs the case to the DoctorCase table for doctor review.
+    Also creates a Patient record if needed and logs a DoctorCase
+    to the dashboard.
     """
     from app.db.models import DoctorCase
 
-    # Save to DoctorCase table for doctor dashboard
     db = SessionLocal()
     try:
-        case = DoctorCase(
-            patient_phone=patient_phone,
-            symptoms=symptom_summary,
-            severity="critical",
-            status="pending",
-        )
-        db.add(case)
-        db.commit()
-        print(f"[Emergency] Case logged to doctor dashboard for {patient_phone}")
+        # Ensure a Patient row exists (required for any downstream FK usage)
+        patient = db.query(Patient).filter(Patient.phone == patient_phone).first()
+        if not patient:
+            patient = Patient(
+                phone=patient_phone,
+                name="Emergency Patient",
+                language_preference="en",
+            )
+            db.add(patient)
+            db.commit()
+            print(f"[Emergency] Patient created: {patient_phone}")
+
+        # Log the critical case for the doctor dashboard
+        try:
+            case = DoctorCase(
+                patient_phone=patient_phone,
+                symptoms=symptom_summary,
+                severity="critical",
+                status="pending",
+            )
+            db.add(case)
+            db.commit()
+            db.refresh(case)
+            print(f"[Emergency] Case logged to DB: ID={case.id}")
+        except Exception as e:
+            db.rollback()
+            print(f"[Emergency] Failed to log case: {type(e).__name__}: {e}")
     except Exception as e:
         db.rollback()
-        print(f"[Emergency] Failed to log case to DB: {e}")
+        print(f"[Emergency] Patient creation failed: {type(e).__name__}: {e}")
     finally:
         db.close()
 
