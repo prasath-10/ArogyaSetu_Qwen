@@ -55,15 +55,26 @@ def test_session_memory():
 
 
 def test_get_patient_case_endpoint():
-    from app.db.models import DoctorCase
+    from app.db.models import DoctorCase, Patient
     import datetime
 
     db = SessionLocal()
     try:
-        # Create a mock DoctorCase
+        # Create a mock Patient and DoctorCase
         test_phone = "test-patient-phone-999"
+        
         # Cleanup if exists
         db.query(DoctorCase).filter(DoctorCase.patient_phone == test_phone).delete()
+        db.query(Patient).filter(Patient.phone == test_phone).delete()
+        db.commit()
+
+        # Create Patient record first to satisfy foreign key constraint
+        patient = Patient(
+            phone=test_phone,
+            name="Test Patient",
+            language_preference="en"
+        )
+        db.add(patient)
         db.commit()
 
         # Try GET before case is reviewed (should return has_update=False)
@@ -95,6 +106,7 @@ def test_get_patient_case_endpoint():
 
             # Cleanup
             db.delete(case)
+            db.delete(patient)
             db.commit()
     finally:
         db.close()
