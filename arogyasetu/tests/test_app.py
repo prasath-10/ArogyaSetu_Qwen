@@ -52,3 +52,50 @@ def test_session_memory():
 
     session_memory.clear_history(session_id)
     assert session_memory.get_history(session_id) == []
+
+
+def test_get_patient_case_endpoint():
+    from app.db.models import DoctorCase
+    import datetime
+
+    db = SessionLocal()
+    try:
+        # Create a mock DoctorCase
+        test_phone = "test-patient-phone-999"
+        # Cleanup if exists
+        db.query(DoctorCase).filter(DoctorCase.patient_phone == test_phone).delete()
+        db.commit()
+
+        # Try GET before case is reviewed (should return has_update=False)
+        with TestClient(app) as client:
+            response = client.get(f"/api/cases/patient/{test_phone}")
+            assert response.status_code == 200
+            assert response.json() == {"has_update": False}
+
+            # Create case with status reviewed
+            case = DoctorCase(
+                patient_phone=test_phone,
+                symptoms="Fever and dry cough",
+                severity="critical",
+                status="reviewed",
+                doctor_notes="Take paracetamol and rest.",
+                reviewed_at=datetime.datetime.utcnow(),
+            )
+            db.add(case)
+            db.commit()
+            db.refresh(case)
+
+            response = client.get(f"/api/cases/patient/{test_phone}")
+            assert response.status_code == 200
+            data = response.json()
+            assert data["has_update"] is True
+            assert data["doctor_notes"] == "Take paracetamol and rest."
+            assert data["status"] == "reviewed"
+            assert data["case_id"] == str(case.id)
+
+            # Cleanup
+            db.delete(case)
+            db.commit()
+    finally:
+        db.close()
+

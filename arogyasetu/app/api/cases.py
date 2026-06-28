@@ -70,3 +70,25 @@ def review_case(payload: ReviewRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(case)
     return case
+
+
+@router.get("/cases/patient/{session_id}")
+def get_patient_case(session_id: str, db: Session = Depends(get_db)):
+    """Look up a DoctorCase for a patient session, checking for doctor reviews."""
+    case = (
+        db.query(DoctorCase)
+        .filter(DoctorCase.patient_phone == session_id)
+        .order_by(DoctorCase.created_at.desc())
+        .first()
+    )
+
+    if case and case.status in ("reviewed", "resolved") and case.doctor_notes:
+        return {
+            "has_update": True,
+            "doctor_notes": case.doctor_notes,
+            "status": case.status,
+            "reviewed_at": case.reviewed_at.isoformat() if case.reviewed_at else None,
+            "case_id": str(case.id),
+        }
+
+    return {"has_update": False}
