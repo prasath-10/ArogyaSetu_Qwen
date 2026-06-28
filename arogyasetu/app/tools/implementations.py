@@ -98,6 +98,18 @@ def book_slot(
         db.add(appointment)
         db.commit()
 
+        # Log moderate case to doctor dashboard
+        from app.db.models import DoctorCase
+        case = DoctorCase(
+            patient_phone=patient_phone,
+            symptoms=f"Appointment booked at {clinic.name} — token {token}",
+            severity="moderate",
+            status="pending",
+        )
+        db.add(case)
+        db.commit()
+        print(f"[Booking] Moderate case logged to doctor dashboard")
+
         return {
             "status": "confirmed",
             "clinic_name": clinic.name,
@@ -110,14 +122,35 @@ def book_slot(
     finally:
         db.close()
 
-
 def alert_emergency(
     patient_phone: str, location: str, symptom_summary: str
 ) -> dict:
     """Escalate critical cases.
 
     Triggers an emergency dispatch webhook if configured.
+    Also logs the case to the DoctorCase table for doctor review.
     """
+    from app.db.models import DoctorCase
+
+    # Save to DoctorCase table for doctor dashboard
+    db = SessionLocal()
+    try:
+        case = DoctorCase(
+            patient_phone=patient_phone,
+            symptoms=symptom_summary,
+            severity="critical",
+            status="pending",
+        )
+        db.add(case)
+        db.commit()
+        print(f"[Emergency] Case logged to doctor dashboard for {patient_phone}")
+    except Exception as e:
+        db.rollback()
+        print(f"[Emergency] Failed to log case to DB: {e}")
+    finally:
+        db.close()
+
+    # Send webhook if configured
     response_status = "logged"
     if settings.emergency_webhook_url:
         try:
@@ -130,7 +163,7 @@ def alert_emergency(
                 r = client.post(
                     settings.emergency_webhook_url, json=payload, timeout=5.0
                 )
-                if r.status_code == 200 or r.status_code == 201:
+                if r.status_code in (200, 201):
                     response_status = "dispatched"
         except Exception as e:
             print(f"[Emergency] Webhook post failed: {e}")
