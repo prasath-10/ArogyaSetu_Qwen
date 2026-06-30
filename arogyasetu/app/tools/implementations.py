@@ -139,24 +139,31 @@ def book_slot(
     return result
 
 def alert_emergency(
-    patient_phone: str, location: str, symptom_summary: str
+    patient_phone: str,
+    location: str,
+    symptom_summary: str,
+    patient_name: str | None = None,
+    patient_age: int | None = None,
+    location_detail: str | None = None,
 ) -> dict:
     """Escalate critical cases.
 
     Triggers an emergency dispatch webhook if configured.
     Also creates a Patient record if needed and logs a DoctorCase
-    to the dashboard.
+    to the dashboard, including any name/age/location collected
+    from the patient during the conversation.
     """
     from app.db.models import DoctorCase
 
     db = SessionLocal()
+    case_id = None
     try:
         # Ensure a Patient row exists (required for any downstream FK usage)
         patient = db.query(Patient).filter(Patient.phone == patient_phone).first()
         if not patient:
             patient = Patient(
                 phone=patient_phone,
-                name="Emergency Patient",
+                name=patient_name or "Emergency Patient",
                 language_preference="en",
             )
             db.add(patient)
@@ -170,11 +177,20 @@ def alert_emergency(
                 symptoms=symptom_summary,
                 severity="critical",
                 status="pending",
+                # New fields from Task 1 — all nullable, safe to omit
+                patient_name=patient_name,
+                patient_age=patient_age,
+                location_detail=location_detail or location,
             )
             db.add(case)
             db.commit()
             db.refresh(case)
-            print(f"[Emergency] Case logged to DB: ID={case.id}")
+            case_id = case.id
+            print(
+                f"[Emergency] Case logged to DB: ID={case_id} | "
+                f"Name={patient_name} | Age={patient_age} | "
+                f"Location={location_detail or location}"
+            )
         except Exception as e:
             db.rollback()
             print(f"[Emergency] Failed to log case: {type(e).__name__}: {e}")
@@ -190,8 +206,10 @@ def alert_emergency(
         try:
             payload = {
                 "patient_phone": patient_phone,
-                "location": location,
+                "location": location_detail or location,
                 "symptom_summary": symptom_summary,
+                "patient_name": patient_name,
+                "patient_age": patient_age,
             }
             with httpx.Client() as client:
                 r = client.post(
@@ -206,7 +224,12 @@ def alert_emergency(
         "status": response_status,
         "ambulance_eta_min": 10,
         "doctor_paged": True,
-        "location": location,
+        "location": location_detail or location,
+        # Echo collected patient details so the agent can render the emergency card
+        "patient_name": patient_name,
+        "patient_age": patient_age,
+        "location_detail": location_detail or location,
+        "case_id": case_id,
     }
 
 

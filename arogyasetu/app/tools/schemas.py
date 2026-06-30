@@ -40,9 +40,30 @@ TOOLS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "patient_phone": {"type": "string"},
-                    "location": {"type": "string"},
-                    "symptom_summary": {"type": "string"},
+                    "patient_phone": {
+                        "type": "string",
+                        "description": "Patient's WhatsApp phone number.",
+                    },
+                    "location": {
+                        "type": "string",
+                        "description": "Patient's location or nearest landmark. Use 'Unknown — follow up required' if not provided.",
+                    },
+                    "symptom_summary": {
+                        "type": "string",
+                        "description": "Compact clinical summary including symptoms, onset time, and any collected patient details.",
+                    },
+                    "patient_name": {
+                        "type": "string",
+                        "description": "Patient's name as collected during the conversation. Optional.",
+                    },
+                    "patient_age": {
+                        "type": "integer",
+                        "description": "Patient's age in years as collected during the conversation. Optional.",
+                    },
+                    "location_detail": {
+                        "type": "string",
+                        "description": "Verbatim location or landmark text provided by the patient. Optional — supplements the 'location' field.",
+                    },
                 },
                 "required": ["patient_phone", "location", "symptom_summary"],
             },
