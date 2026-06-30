@@ -73,3 +73,8 @@ class DoctorCase(Base):
     doctor_notes = Column(Text, nullable=True)
     status = Column(String, nullable=False, default="pending")
 
+    # Collected by the agent before dispatching a critical-severity alert
+    patient_name = Column(String, nullable=True)
+    patient_age = Column(Integer, nullable=True)
+    location_detail = Column(String, nullable=True)
+
