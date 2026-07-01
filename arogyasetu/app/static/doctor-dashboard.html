@@ -992,6 +992,14 @@
             </div>
             <div class="modal-body">
                 <div class="detail-grid">
+                    <div class="detail-item" id="modalNameWrap" style="display:none;">
+                        <div class="detail-label">Patient Name</div>
+                        <div class="detail-value" id="modalName"></div>
+                    </div>
+                    <div class="detail-item" id="modalAgeWrap" style="display:none;">
+                        <div class="detail-label">Patient Age</div>
+                        <div class="detail-value" id="modalAge"></div>
+                    </div>
                     <div class="detail-item">
                         <div class="detail-label">Patient Phone</div>
                         <div class="detail-value" id="modalPhone"></div>
@@ -1007,6 +1015,10 @@
                     <div class="detail-item">
                         <div class="detail-label">Created</div>
                         <div class="detail-value" id="modalCreated"></div>
+                    </div>
+                    <div class="detail-item full-width" id="modalLocationWrap" style="display:none;">
+                        <div class="detail-label">Patient Location</div>
+                        <div class="detail-value" id="modalLocation"></div>
                     </div>
                     <div class="detail-item full-width">
                         <div class="detail-label">Symptoms</div>
@@ -1127,9 +1139,18 @@
             }
             emptyState.style.display = 'none';
 
-            casesBody.innerHTML = allCases.map(c => `
+            casesBody.innerHTML = allCases.map(c => {
+                let patientInfo = escapeHTML(c.patient_phone);
+                if (c.patient_name) {
+                    patientInfo = `<strong>${escapeHTML(c.patient_name)}</strong>`;
+                    if (c.patient_age) {
+                        patientInfo += ` (${c.patient_age})`;
+                    }
+                    patientInfo += `<br><span style="font-size:12px; color:var(--text-secondary);">${escapeHTML(c.patient_phone)}</span>`;
+                }
+                return `
                 <tr>
-                    <td class="phone-cell" data-label="Patient">${escapeHTML(c.patient_phone)}</td>
+                    <td class="phone-cell" data-label="Patient">${patientInfo}</td>
                     <td class="symptoms-cell" data-label="Symptoms" title="${escapeHTML(c.symptoms)}">${escapeHTML(c.symptoms)}</td>
                     <td data-label="Severity">
                         <span class="sev-badge ${c.severity}">
@@ -1145,7 +1166,8 @@
                         <button class="btn-view" onclick="openCase(${c.id})">View</button>
                     </td>
                 </tr>
-            `).join('');
+                `;
+            }).join('');
         }
 
         /* ── Filters ───────────────────────────────────────── */
@@ -1167,6 +1189,33 @@
             document.getElementById('modalPhone').textContent     = selectedCase.patient_phone;
             document.getElementById('modalSymptoms').textContent  = selectedCase.symptoms;
             document.getElementById('modalCreated').textContent   = formatDate(selectedCase.created_at);
+
+            // Patient Name
+            const nameWrap = document.getElementById('modalNameWrap');
+            if (selectedCase.patient_name) {
+                nameWrap.style.display = 'block';
+                document.getElementById('modalName').textContent = selectedCase.patient_name;
+            } else {
+                nameWrap.style.display = 'none';
+            }
+
+            // Patient Age
+            const ageWrap = document.getElementById('modalAgeWrap');
+            if (selectedCase.patient_age) {
+                ageWrap.style.display = 'block';
+                document.getElementById('modalAge').textContent = selectedCase.patient_age;
+            } else {
+                ageWrap.style.display = 'none';
+            }
+
+            // Location
+            const locWrap = document.getElementById('modalLocationWrap');
+            if (selectedCase.location_detail) {
+                locWrap.style.display = 'block';
+                document.getElementById('modalLocation').textContent = selectedCase.location_detail;
+            } else {
+                locWrap.style.display = 'none';
+            }
 
             // Severity badge inside modal
             document.getElementById('modalSeverity').innerHTML =
