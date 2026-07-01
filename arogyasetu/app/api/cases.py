@@ -20,6 +20,10 @@ class CaseOut(BaseModel):
     reviewed_at: datetime.datetime | None = None
     doctor_notes: str | None = None
     status: str
+    # Collected during critical triage conversation
+    patient_name: str | None = None
+    patient_age: int | None = None
+    location_detail: str | None = None
 
     class Config:
         from_attributes = True
